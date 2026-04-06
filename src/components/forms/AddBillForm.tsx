@@ -6,7 +6,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus } from "lucide-react"
 import { useAppState } from "@/hooks/useAppState"
 import type { Bill, BillFrequency } from "@/types"
 
@@ -32,199 +30,104 @@ const FREQUENCIES: { value: BillFrequency; label: string }[] = [
 ]
 
 type Props = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
   existing?: Bill
-  onClose?: () => void
-  trigger?: React.ReactElement
 }
 
-export function AddBillForm({ existing, onClose, trigger }: Props) {
+export function AddBillForm({ open, onOpenChange, existing }: Props) {
   const { dispatch, state } = useAppState()
-  const [open, setOpen] = useState(false)
-  const [label, setLabel] = useState(existing?.label ?? "")
-  const [amount, setAmount] = useState(existing?.amount?.toString() ?? "")
-  const [currency, setCurrency] = useState(existing?.currency ?? state.baseCurrency)
   const [frequency, setFrequency] = useState<BillFrequency>(existing?.frequency ?? "monthly")
-  const [date, setDate] = useState(existing?.date ?? "")
 
-  function reset() {
-    if (!existing) {
-      setLabel("")
-      setAmount("")
-      setCurrency(state.baseCurrency)
-      setFrequency("monthly")
-      setDate("")
-    }
-  }
-
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const parsedAmount = parseFloat(amount)
-    if (!label.trim() || isNaN(parsedAmount) || parsedAmount <= 0) return
+    const fd = new FormData(e.currentTarget)
+    const label = (fd.get("label") as string).trim()
+    const amount = parseFloat(fd.get("amount") as string)
+    const currency = fd.get("currency") as string
+    const date = fd.get("date") as string | null
+    if (!label || isNaN(amount) || amount <= 0) return
     if (frequency === "one-time" && !date) return
 
     if (existing) {
       dispatch({
         type: "UPDATE_BILL",
-        payload: {
-          ...existing,
-          label: label.trim(),
-          amount: parsedAmount,
-          currency,
-          frequency,
-          date: frequency === "one-time" ? date : undefined,
-        },
+        payload: { ...existing, label, amount, currency, frequency, date: frequency === "one-time" ? (date ?? undefined) : undefined },
       })
     } else {
-      const newBill: Bill = {
-        id: crypto.randomUUID(),
-        label: label.trim(),
-        amount: parsedAmount,
-        currency,
-        frequency,
-        date: frequency === "one-time" ? date : undefined,
-        active: true,
-      }
-      dispatch({ type: "ADD_BILL", payload: newBill })
+      dispatch({
+        type: "ADD_BILL",
+        payload: {
+          id: crypto.randomUUID(), label, amount, currency, frequency, active: true,
+          date: frequency === "one-time" ? (date ?? undefined) : undefined,
+        },
+      })
       if (currency !== state.baseCurrency) {
-        dispatch({
-          type: "UPSERT_EXCHANGE_RATE",
-          payload: { from: currency, to: state.baseCurrency, rate: 1 },
-        })
+        dispatch({ type: "UPSERT_EXCHANGE_RATE", payload: { from: currency, to: state.baseCurrency, rate: 1 } })
       }
     }
-
-    reset()
-    setOpen(false)
-    onClose?.()
+    onOpenChange(false)
   }
 
-  const defaultTrigger = (
-    <Button
-      size="sm"
-      variant="ghost"
-      className="h-7 px-2 text-xs"
-      style={{ color: "var(--accent)" }}
-    >
-      <Plus className="h-3 w-3 mr-1" />
-      Add
-    </Button>
-  )
-
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={trigger ?? defaultTrigger} />
-      <SheetContent
-        style={{
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border)",
-          color: "var(--text-primary)",
-        }}
-      >
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
         <SheetHeader>
           <SheetTitle style={{ color: "var(--text-primary)" }}>
             {existing ? "Edit bill" : "Add bill"}
           </SheetTitle>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-          <div className="space-y-1.5">
+        <form onSubmit={handleSubmit} className="space-y-5 px-4 pb-6 mt-2">
+          <div className="space-y-2">
             <Label style={{ color: "var(--text-secondary)" }}>Label</Label>
-            <Input
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="e.g. Rent"
-              style={{
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border)",
-                color: "var(--text-primary)",
-              }}
-            />
+            <Input name="label" defaultValue={existing?.label} placeholder="e.g. Rent"
+              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label style={{ color: "var(--text-secondary)" }}>Amount</Label>
-            <Input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-              style={{
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border)",
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-mono)",
-              }}
-            />
+            <Input name="amount" type="number" defaultValue={existing?.amount} placeholder="0.00" min="0" step="0.01"
+              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: "var(--font-mono)" }} />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label style={{ color: "var(--text-secondary)" }}>Currency</Label>
-            <Select value={currency} onValueChange={(v) => { if (v !== null) setCurrency(v) }}>
-              <SelectTrigger
-                style={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-primary)",
-                }}
-              >
+            <Select name="currency" defaultValue={existing?.currency ?? state.baseCurrency}>
+              <SelectTrigger style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
                 {COMMON_CURRENCIES.map((c) => (
-                  <SelectItem key={c} value={c} style={{ color: "var(--text-primary)" }}>
-                    {c}
-                  </SelectItem>
+                  <SelectItem key={c} value={c} style={{ color: "var(--text-primary)" }}>{c}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label style={{ color: "var(--text-secondary)" }}>Frequency</Label>
-            <Select value={frequency} onValueChange={(v) => { if (v !== null) setFrequency(v as BillFrequency) }}>
-              <SelectTrigger
-                style={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-primary)",
-                }}
-              >
+            <Select name="frequency" value={frequency} onValueChange={(v) => { if (v) setFrequency(v as BillFrequency) }}>
+              <SelectTrigger style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
                 {FREQUENCIES.map((f) => (
-                  <SelectItem key={f.value} value={f.value} style={{ color: "var(--text-primary)" }}>
-                    {f.label}
-                  </SelectItem>
+                  <SelectItem key={f.value} value={f.value} style={{ color: "var(--text-primary)" }}>{f.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           {frequency === "one-time" && (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label style={{ color: "var(--text-secondary)" }}>Date</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                style={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-primary)",
-                  fontFamily: "var(--font-mono)",
-                }}
-              />
+              <Input name="date" type="date" defaultValue={existing?.date}
+                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: "var(--font-mono)" }} />
             </div>
           )}
 
-          <Button
-            type="submit"
-            className="w-full"
-            style={{ background: "var(--accent)", color: "#09090f" }}
-          >
+          <Button type="submit" className="w-full" style={{ background: "var(--accent)", color: "#09090f" }}>
             {existing ? "Save changes" : "Add bill"}
           </Button>
         </form>

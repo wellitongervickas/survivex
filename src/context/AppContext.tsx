@@ -1,6 +1,13 @@
 "use client"
 
-import React, { createContext, useContext, useReducer, useCallback } from "react"
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useRef,
+  useEffect,
+  useCallback,
+} from "react"
 import type {
   AppState,
   Balance,
@@ -10,7 +17,8 @@ import type {
   ExchangeRate,
   CurrencyCode,
 } from "@/types"
-import { encrypt, decrypt, saveToVault, loadFromVault } from "@/lib/crypto"
+import { saveWithSession } from "@/lib/crypto"
+import type { SessionKey } from "@/lib/crypto"
 
 export const DEFAULT_STATE: AppState = {
   baseCurrency: "EUR",
@@ -22,7 +30,7 @@ export const DEFAULT_STATE: AppState = {
   projectionMonths: 24,
 }
 
-type AppAction =
+export type AppAction =
   | { type: "SET_STATE"; payload: AppState }
   | { type: "SET_BASE_CURRENCY"; payload: CurrencyCode }
   | { type: "ADD_BALANCE"; payload: Balance }
@@ -50,28 +58,19 @@ function reducer(state: AppState, action: AppAction): AppState {
     case "ADD_BALANCE":
       return { ...state, balances: [...state.balances, action.payload] }
     case "UPDATE_BALANCE":
-      return {
-        ...state,
-        balances: state.balances.map((b) => (b.id === action.payload.id ? action.payload : b)),
-      }
+      return { ...state, balances: state.balances.map((b) => (b.id === action.payload.id ? action.payload : b)) }
     case "DELETE_BALANCE":
       return { ...state, balances: state.balances.filter((b) => b.id !== action.payload) }
     case "ADD_BILL":
       return { ...state, bills: [...state.bills, action.payload] }
     case "UPDATE_BILL":
-      return {
-        ...state,
-        bills: state.bills.map((b) => (b.id === action.payload.id ? action.payload : b)),
-      }
+      return { ...state, bills: state.bills.map((b) => (b.id === action.payload.id ? action.payload : b)) }
     case "DELETE_BILL":
       return { ...state, bills: state.bills.filter((b) => b.id !== action.payload) }
     case "ADD_INCOME":
       return { ...state, incomes: [...state.incomes, action.payload] }
     case "UPDATE_INCOME":
-      return {
-        ...state,
-        incomes: state.incomes.map((i) => (i.id === action.payload.id ? action.payload : i)),
-      }
+      return { ...state, incomes: state.incomes.map((i) => (i.id === action.payload.id ? action.payload : i)) }
     case "DELETE_INCOME":
       return { ...state, incomes: state.incomes.filter((i) => i.id !== action.payload) }
     case "SET_SAFE_POINT":
@@ -113,8 +112,8 @@ function reducer(state: AppState, action: AppAction): AppState {
 type AppContextValue = {
   state: AppState
   dispatch: React.Dispatch<AppAction>
-  saveState: (password: string) => Promise<void>
-  loadState: (password: string) => Promise<void>
+  /** Called by VaultGate after unlock/create — provides the session key for auto-save. */
+  setSession: (session: SessionKey | null) => void
   clearState: () => void
 }
 
@@ -122,30 +121,47 @@ const AppContext = createContext<AppContextValue | null>(null)
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, DEFAULT_STATE)
+  const sessionRef = useRef<SessionKey | null>(null)
+  // Track whether state has been loaded from vault (skip auto-save on initial render)
+  const readyRef = useRef(false)
 
-  const saveState = useCallback(
-    async (password: string) => {
-      const json = JSON.stringify(state)
-      const blob = await encrypt(json, password)
-      await saveToVault(blob)
-    },
-    [state],
-  )
-
-  const loadState = useCallback(async (password: string) => {
-    const blob = await loadFromVault()
-    if (!blob) throw new Error("No vault found")
-    const json = await decrypt(blob, password)
-    const parsed = JSON.parse(json) as AppState
-    dispatch({ type: "SET_STATE", payload: parsed })
+  const setSession = useCallback((session: SessionKey | null) => {
+    sessionRef.current = session
+    if (!session) readyRef.current = false
   }, [])
 
   const clearState = useCallback(() => {
     dispatch({ type: "RESET" })
   }, [])
 
+  // Auto-save whenever state changes, with a short debounce
+  useEffect(() => {
+    if (!readyRef.current) return
+    const session = sessionRef.current
+    if (!session) return
+
+    const timer = setTimeout(() => {
+      saveWithSession(JSON.stringify(state), session).catch(() => {
+        // Silent — save will retry on next change
+      })
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [state])
+
+  // Expose a way for VaultGate to mark "ready to auto-save"
+  const dispatchAndMark = useCallback(
+    (action: AppAction) => {
+      if (action.type === "SET_STATE") {
+        readyRef.current = true
+      }
+      dispatch(action)
+    },
+    [],
+  )
+
   return (
-    <AppContext.Provider value={{ state, dispatch, saveState, loadState, clearState }}>
+    <AppContext.Provider value={{ state, dispatch: dispatchAndMark, setSession, clearState }}>
       {children}
     </AppContext.Provider>
   )

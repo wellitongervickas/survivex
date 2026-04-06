@@ -29,15 +29,12 @@ export function SafePointPanel() {
   function handleValueBlur() {
     const value = parseFloat(inputValue)
     if (!isNaN(value) && value >= 0) {
-      dispatch({
-        type: "SET_SAFE_POINT",
-        payload: { type: state.safePoint.type, value },
-      })
+      dispatch({ type: "SET_SAFE_POINT", payload: { type: state.safePoint.type, value } })
     }
   }
 
   return (
-    <div className="rounded-lg p-4 space-y-3" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+    <div className="rounded-xl p-5 space-y-4" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
       <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
         Safe Point
       </h3>
@@ -47,19 +44,19 @@ export function SafePointPanel() {
         onValueChange={(v) => handleTypeChange(v as "absolute" | "percentage")}
       >
         <TabsList
-          className="h-7 w-full"
+          className="h-8 w-full"
           style={{ background: "var(--bg-base)", border: "1px solid var(--border)" }}
         >
-          <TabsTrigger value="absolute" className="flex-1 text-xs h-5">
+          <TabsTrigger value="absolute" className="flex-1 text-xs">
             Amount
           </TabsTrigger>
-          <TabsTrigger value="percentage" className="flex-1 text-xs h-5">
+          <TabsTrigger value="percentage" className="flex-1 text-xs">
             Percent
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label className="text-xs" style={{ color: "var(--text-secondary)" }}>
           {state.safePoint.type === "absolute"
             ? `Floor amount (${state.baseCurrency})`
@@ -73,7 +70,7 @@ export function SafePointPanel() {
           min="0"
           max={state.safePoint.type === "percentage" ? "100" : undefined}
           step={state.safePoint.type === "percentage" ? "1" : "0.01"}
-          className="h-8 text-sm"
+          className="h-9 text-sm"
           style={{
             background: "var(--bg-base)",
             border: "1px solid var(--border)",

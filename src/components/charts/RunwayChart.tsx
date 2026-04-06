@@ -68,7 +68,7 @@ export function RunwayChart() {
         Balance Runway
       </h3>
       <ResponsiveContainer width="100%" height={320}>
-        <AreaChart data={snapshots} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+        <AreaChart data={snapshots} margin={{ top: 28, right: 16, bottom: 0, left: 0 }}>
           <defs key="gradient-defs">
             <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.25} />
@@ -130,7 +130,7 @@ export function RunwayChart() {
                 fill: "var(--accent)",
                 fontSize: 10,
                 fontFamily: "var(--font-mono)",
-                position: "top",
+                position: "insideTopRight",
               }}
             />
           )}

@@ -1,6 +1,5 @@
 "use client"
 
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { BalancesPanel } from "@/components/panels/BalancesPanel"
 import { BillsPanel } from "@/components/panels/BillsPanel"
 import { IncomesPanel } from "@/components/panels/IncomesPanel"
@@ -10,14 +9,14 @@ import { ExchangeRatesPanel } from "@/components/panels/ExchangeRatesPanel"
 export function Sidebar() {
   return (
     <aside
-      className="flex flex-col border-r h-full"
+      className="flex flex-col border-r h-full overflow-hidden w-full"
       style={{
         background: "var(--bg-surface)",
         borderColor: "var(--border)",
       }}
     >
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 space-y-3 pb-8">
           <div className="panel-slide-in">
             <BalancesPanel />
           </div>
@@ -34,7 +33,7 @@ export function Sidebar() {
             <ExchangeRatesPanel />
           </div>
         </div>
-      </ScrollArea>
+      </div>
     </aside>
   )
 }
