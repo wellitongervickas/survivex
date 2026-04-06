@@ -1,5 +1,8 @@
 # SurviveX
 
+<img width="1614" height="807" alt="image" src="https://github.com/user-attachments/assets/3da6079b-4df9-42c9-b938-021ba630e158" />
+
+
 **Know exactly how long your savings can sustain you.**
 
 SurviveX is a financial runway tracker for freelancers, indie hackers, and anyone living off savings. You tell it what you have, what you spend, and what you earn — it tells you how many months you can survive, when you need to act, and what your month-by-month balance looks like.
