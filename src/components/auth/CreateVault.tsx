@@ -50,7 +50,7 @@ export function CreateVault({ onSuccess }: Props) {
   return (
     <div className="flex min-h-screen items-center justify-center" style={{ background: "var(--bg-base)" }}>
       <div
-        className="w-full max-w-sm rounded-xl p-8 space-y-6"
+        className="w-full max-w-sm mx-4 sm:mx-auto rounded-xl p-8 space-y-6"
         style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
       >
         <div className="space-y-1.5">

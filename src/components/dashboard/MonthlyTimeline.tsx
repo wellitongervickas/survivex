@@ -50,8 +50,8 @@ export function MonthlyTimeline() {
         </h3>
       </div>
 
-      <ScrollArea className="h-80">
-        <table className="w-full text-xs">
+      <ScrollArea className="h-80 overflow-x-auto">
+        <table className="w-full min-w-[280px] text-xs">
           <thead>
             <tr
               className="border-b sticky top-0"

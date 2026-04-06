@@ -34,7 +34,7 @@ export function RunwaySummary() {
         <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
           Total Balance
         </p>
-        <p className="text-2xl font-bold font-mono-num leading-none" style={{ color: "var(--accent)" }}>
+        <p className="text-xl md:text-2xl font-bold font-mono-num leading-none truncate" style={{ color: "var(--accent)" }}>
           <AnimatedBalance amount={totalBalance} currency={state.baseCurrency} />
         </p>
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>
@@ -85,7 +85,7 @@ export function RunwaySummary() {
         <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
           Safe Point Floor
         </p>
-        <p className="text-2xl font-bold font-mono-num leading-none" style={{ color: "var(--safe)" }}>
+        <p className="text-xl md:text-2xl font-bold font-mono-num leading-none truncate" style={{ color: "var(--safe)" }}>
           <AnimatedBalance amount={safeThreshold} currency={state.baseCurrency} />
         </p>
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>

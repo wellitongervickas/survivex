@@ -16,7 +16,7 @@ export function Shell() {
     <div className="flex flex-col h-screen" style={{ background: "var(--bg-base)" }}>
       <Header />
 
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 overflow-x-hidden">
         {/* Desktop sidebar — fixed width, full height, scrolls internally */}
         <div
           className="hidden md:block flex-shrink-0"
@@ -27,7 +27,7 @@ export function Shell() {
 
         {/* Main content — scrolls independently */}
         <main className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-6 space-y-8 max-w-5xl">
+          <div className="p-4 sm:p-6 space-y-8 max-w-5xl">
             <RunwaySummary />
 
             {/* Projection range selector */}
