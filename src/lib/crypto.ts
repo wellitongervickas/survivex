@@ -14,6 +14,10 @@ async function getDB() {
   })
 }
 
+function toBufferSource(arr: Uint8Array): BufferSource {
+  return arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer
+}
+
 async function deriveKey(
   password: string,
   salt: Uint8Array,
@@ -28,7 +32,7 @@ async function deriveKey(
     ["deriveKey"],
   )
   return crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    { name: "PBKDF2", salt: toBufferSource(salt), iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
     keyMaterial,
     { name: "AES-GCM", length: 256 },
     false,
@@ -41,7 +45,11 @@ export async function encrypt(plaintext: string, password: string): Promise<Encr
   const salt = crypto.getRandomValues(new Uint8Array(16))
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const key = await deriveKey(password, salt, ["encrypt"])
-  const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(plaintext))
+  const data = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: toBufferSource(iv) },
+    key,
+    enc.encode(plaintext),
+  )
   return { salt, iv, data }
 }
 
@@ -49,7 +57,7 @@ export async function decrypt(blob: EncryptedBlob, password: string): Promise<st
   const dec = new TextDecoder()
   const key = await deriveKey(password, blob.salt, ["decrypt"])
   const plainBuffer = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: blob.iv },
+    { name: "AES-GCM", iv: toBufferSource(blob.iv) },
     key,
     blob.data,
   )
@@ -58,7 +66,6 @@ export async function decrypt(blob: EncryptedBlob, password: string): Promise<st
 
 export async function saveToVault(blob: EncryptedBlob): Promise<void> {
   const db = await getDB()
-  // Store as plain object with Array buffers serialized for IndexedDB compatibility
   await db.put(STORE_NAME, blob, RECORD_KEY)
 }
 
